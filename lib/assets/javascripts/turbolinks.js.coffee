@@ -2,14 +2,13 @@ initialized    = false
 currentState   = null
 referer        = document.location.href
 loadedAssets   = null
-pageCache      = {}
 createDocument = null
 requestMethod  = document.cookie.match(/request_method=(\w+)/)?[1].toUpperCase() or ''
 xhr            = null
 
 visit = (url) ->
   if browserSupportsPushState && browserIsntBuggy
-    cacheCurrentPage()
+    rememberInitialPage()
     reflectNewUrl url
     fetchReplacement url
   else
@@ -47,33 +46,8 @@ fetchReplacement = (url) ->
   xhr.send()
 
 fetchHistory = (state) ->
-  cacheCurrentPage()
-
-  if page = pageCache[state.position]
-    xhr?.abort()
-    changePage page.title, page.body
-    recallScrollPosition page
-    triggerEvent 'page:restore'
-  else
-    fetchReplacement document.location.href
-
-
-cacheCurrentPage = ->
   rememberInitialPage()
-
-  pageCache[currentState.position] =
-    url:       document.location.href,
-    body:      document.body,
-    title:     document.title,
-    positionY: window.pageYOffset,
-    positionX: window.pageXOffset
-
-  constrainPageCacheTo(10)
-
-constrainPageCacheTo = (limit) ->
-  for own key, value of pageCache
-    pageCache[key] = null if key <= currentState.position - limit
-  return
+  fetchReplacement document.location.href
 
 changePage = (title, body, csrfToken, runScripts) ->
   document.title = title
